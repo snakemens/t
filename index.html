@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Змійка</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #gameCanvas {
+      background-color: #000;
+    }
+
+    #startButtonContainer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #scoreContainer {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: white;
+      font-size: 18px;
+    }
+
+    table {
+      position: absolute;
+      top: 50px;
+      left: 10px;
+      color: white;
+      font-size: 18px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    th, td {
+      padding: 5px 10px;
+    }
+
+    th {
+      background-color: black;
+    }
+
+    td {
+      text-align: center;
+      color: black; /* Змінено колір цифр балів на чорний */
+    }
+  </style>
+</head>
+<body>
+  <div id="startButtonContainer">
+    <input type="text" id="playerNameInput" placeholder="Введіть своє ім'я">
+    <button id="startButton">Почати гру</button>
+  </div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="scoreContainer">Бали: 0</div>
+  <table id="scoreTable">
+    <tr>
+      <th>Гравець</th>
+      <th>Бали</th>
+    </tr>
+  </table>
+  <script>
+    // Отримання елементів з HTML
+    var canvas = document.getElementById("gameCanvas");
+    var context = canvas.getContext("2d");
+    var startButton = document.getElementById("startButton");
+    var scoreContainer = document.getElementById("scoreContainer");
+    var scoreTable = document.getElementById("scoreTable");
+    var playerNameInput = document.getElementById("playerNameInput");
+
+    // Розміри клітинки і поле гри
+    var gridSize = 20;
+    var gridWidth = canvas.width / gridSize;
+    var gridHeight = canvas.height / gridSize;
+
+    // Змінні для змійки
+    var snake = [{ x: 2, y: 0 }, { x: 1, y: 0 }]; // Змінено початкову довжину змійки на 2
+    var snakeDirection = "right";
+
+    // Змінні для яблук
+    var apple = { x: 10, y: 10 };
+
+    // Змінні для балів
+    var score = 0;
+    var playerName = "";
+
+    // Оновлення гри
+    function update() {
+      // Рух змійки
+      var head = { x: snake[0].x, y: snake[0].y };
+      switch (snakeDirection) {
+        case "up":
+          head.y--;
+          break;
+        case "down":
+          head.y++;
+          break;
+        case "left":
+          head.x--;
+          break;
+        case "right":
+          head.x++;
+          break;
+      }
+      snake.unshift(head);
+
+      // Перевірка зіткнення з яблуком
+      if (head.x === apple.x && head.y === apple.y) {
+        // Змійка їсть яблуко і росте
+        score += 5; // Додано 5 балів
+        updateScoreTable();
+        generateApple();
+      } else {
+        // Видалення останнього сегменту змійки
+        snake.pop();
+      }
+
+      // Перевірка зіткнення з самою собою або межами поля гри
+      if (
+        head.x < 0 ||
+        head.y < 0 ||
+        head.x >= gridWidth ||
+        head.y >= gridHeight ||
+        checkCollision(head)
+      ) {
+        // Гра закінчена
+        alert("Гра закінчена! Ваш результат: " + score + " балів");
+        document.location.reload();
+      }
+
+      // Очищення екрану
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Малювання змійки
+      for (var i = 0; i < snake.length; i++) {
+        drawCell(snake[i], "green");
+      }
+
+      // Малювання яблука
+      drawCell(apple, "red");
+
+      // Оновлення гри через певний інтервал
+      setTimeout(update, 200); // Змінено швидкість змійки на 200 мс
+    }
+
+    // Перевірка зіткнення з сегментами змійки
+    function checkCollision(head) {
+      for (var i = 1; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Малювання клітинки
+    function drawCell(cell, color) {
+      var x = cell.x * gridSize;
+      var y = cell.y * gridSize;
+      context.fillStyle = color;
+      context.fillRect(x, y, gridSize, gridSize);
+    }
+
+    // Згенерувати нове яблуко
+    function generateApple() {
+      var newX = Math.floor(Math.random() * gridWidth);
+      var newY = Math.floor(Math.random() * gridHeight);
+      apple = { x: newX, y: newY };
+    }
+
+    // Оновлення таблиці з балами
+    function updateScoreTable() {
+      var row = scoreTable.insertRow(-1);
+      var playerNameCell = row.insertCell(0);
+      var scoreCell = row.insertCell(1);
+      playerNameCell.textContent = playerName;
+      scoreCell.textContent = score;
+    }
+
+    // Обробник подій для руху змійки
+    function handleKeyPress(event) {
+      switch (event.keyCode) {
+        case 38: // Вгору
+          if (snakeDirection !== "down") {
+            snakeDirection = "up";
+          }
+          break;
+        case 40: // Вниз
+          if (snakeDirection !== "up") {
+            snakeDirection = "down";
+          }
+          break;
+        case 37: // Вліво
+          if (snakeDirection !== "right") {
+            snakeDirection = "left";
+          }
+          break;
+        case 39: // Вправо
+          if (snakeDirection !== "left") {
+            snakeDirection = "right";
+          }
+          break;
+      }
+    }
+
+    // Додавання обробників подій
+    startButton.addEventListener("click", function () {
+      startButtonContainer.style.display = "none"; // Змінено стиль для контейнера з кнопкою
+      playerName = playerNameInput.value;
+      document.addEventListener("keydown", handleKeyPress);
+      update();
+    });
+  </script>
+</body>
+</html>
+
+
